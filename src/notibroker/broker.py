@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import aiofiles
 
 from .handlers import dispatch_message
 
@@ -15,6 +16,25 @@ def send_error(writer, reason):
     payload = json.dumps(message).encode('utf-8')
     writer.write(payload)
     yield from writer.drain()
+
+@asyncio.coroutine
+def read_queue():
+    #Reading persistent queue from disk
+    f = yield from aiofiles.open('filename', mode='r')
+    try:
+        contents = yield from f.read()
+    finally:
+        yield from f.close()
+    print(contents)
+
+@asyncio.coroutine
+def write_queue():
+    #Writing persistent queue to disk
+    f = yield from aiofiles.open('filename', mode='w')
+    try:
+        yield from f.write()
+    finally:
+        yield from f.close()
 
 
 @asyncio.coroutine
