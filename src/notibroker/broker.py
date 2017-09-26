@@ -29,7 +29,7 @@ def read_queue():
 @asyncio.coroutine
 def write_queue(message):
     #Writing persistent queue to disk
-    f = yield from aiofiles.open('filename', mode='w')
+    f = yield from aiofiles.open('filename', mode='a')
     try:
         yield from f.write(str(message))
     finally:
@@ -45,6 +45,7 @@ def handle_message(reader, writer):
 
     try:
         message = json.loads(data.decode('utf-8'))
+        yield from write_queue(message)
     except ValueError as e:
         LOGGER.exception('Invalid message received')
         send_error(writer, str(e))

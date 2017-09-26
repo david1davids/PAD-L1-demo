@@ -9,6 +9,7 @@ def send_message(message, loop):
         '127.0.0.1', 14141, loop=loop
     )
     payload = json.dumps({
+        'queue': queue_to,
         'type': 'command',
         'command': 'send',
         'payload': message
@@ -42,4 +43,5 @@ def main():
 
 
 if __name__ == '__main__':
+    queue_to = input('Where to send: ')
     main()
