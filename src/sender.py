@@ -3,6 +3,7 @@ import asyncio
 import json
 import uuid
 
+
 @asyncio.coroutine
 def send_message(message, loop):
     reader, writer = yield from asyncio.open_connection(
@@ -12,6 +13,7 @@ def send_message(message, loop):
         'queue': queue_to,
         'type': 'command',
         'command': 'send',
+        'persistance': persistance,
         'payload': message
     }).encode('utf-8')
 
@@ -43,5 +45,10 @@ def main():
 
 
 if __name__ == '__main__':
-    queue_to = input('Where to send: ')
+    p = input('For a persistant queue press 1')
+    if int(p) == 1:
+        persistance = 'persistant'
+    else:
+        persistance = 'none'
+    queue_to = input('\nWhere to send: ')
     main()

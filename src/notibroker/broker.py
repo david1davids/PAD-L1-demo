@@ -3,7 +3,7 @@ import json
 import logging
 import aiofiles
 
-from .handlers import dispatch_message
+from .handlers import dispatch_message,write_queue
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,15 +26,6 @@ def read_queue():
     finally:
         yield from f.close()
 
-@asyncio.coroutine
-def write_queue(message):
-    #Writing persistent queue to disk
-    f = yield from aiofiles.open('filename', mode='a')
-    try:
-        yield from f.write(str(message))
-    finally:
-        yield from f.close()
-
 
 @asyncio.coroutine
 def handle_message(reader, writer):
@@ -45,7 +36,9 @@ def handle_message(reader, writer):
 
     try:
         message = json.loads(data.decode('utf-8'))
-        yield from write_queue(message)
+        persistance = message.get('persistance')
+        if (persistance == 'persistant'):
+            yield from write_queue(message)
     except ValueError as e:
         LOGGER.exception('Invalid message received')
         send_error(writer, str(e))
