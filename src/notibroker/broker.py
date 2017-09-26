@@ -25,14 +25,13 @@ def read_queue():
         contents = yield from f.read()
     finally:
         yield from f.close()
-    print(contents)
 
 @asyncio.coroutine
-def write_queue():
+def write_queue(message):
     #Writing persistent queue to disk
     f = yield from aiofiles.open('filename', mode='w')
     try:
-        yield from f.write()
+        yield from f.write(str(message))
     finally:
         yield from f.close()
 
