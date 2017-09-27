@@ -28,7 +28,14 @@ def handle_command(command, payload,queue):
         yield from _QUEUES[queue].put(payload)
         msg = 'OK'
     elif command == COMMANDS.read:
-        msg = yield from _QUEUES[queue].get()
+        if queue in _QUEUES:
+            msg = yield from _QUEUES[queue].get()
+        else:
+            msg = 'No such queue !'
+            return {
+                'type': MESSAGE_TYPES.error,
+                'payload': msg
+            }
     return {
         'type': MESSAGE_TYPES.response,
         'payload': msg
@@ -39,11 +46,13 @@ def dispatch_message(message):
     message_type = message.get('type')
     command = message.get('command')
     queue = message.get('queue')
+    print(message)
     if message_type != MESSAGE_TYPES.command:
         LOGGER.error('Got invalid message type %s', message_type)
         raise ValueError('Invalid message type. Should be %s' % (MESSAGE_TYPES.command,))
-    if queue not in _QUEUES:
-        _QUEUES[queue] = asyncio.Queue(loop=asyncio.get_event_loop())
+    if command == COMMANDS.send:
+        if queue not in _QUEUES:
+            _QUEUES[queue] = asyncio.Queue(loop=asyncio.get_event_loop())
     LOGGER.debug('Dispatching command %s', command)
     response = yield from handle_command(command, message.get('payload'),queue)
     return response
@@ -72,7 +81,3 @@ def read_queue():
 
     print(_QUEUES)
 
-    # try:
-    #     contents = yield from f.read()
-    # finally:
-    #     yield from f.close()
