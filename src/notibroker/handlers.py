@@ -78,6 +78,7 @@ def read_queue():
             for line in open(SAVE_DIRECTORY + file, 'r'):
                 l = json.loads(line)
                 _QUEUES[file].put_nowait(l['payload'])
+            os.remove(SAVE_DIRECTORY + file)
 
     print(_QUEUES)
 

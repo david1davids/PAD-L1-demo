@@ -30,9 +30,9 @@ def run_receiver(loop):
     while True:
         try:
             response = yield from get_message(loop,queue_to_read)
-            message_type = json.loads(response.decode('utf-8'))
-            if message_type['type'] == 'error':
-                print(response)
+            message = json.loads(response.decode('utf-8'))
+            if message['type'] == 'error':
+                print(message['payload'])
                 break
             print('Received %s', response)
             yield from asyncio.sleep(1)
