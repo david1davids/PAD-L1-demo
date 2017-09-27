@@ -45,10 +45,10 @@ def main():
 
 
 if __name__ == '__main__':
-    p = input('For a persistant queue press 1')
+    p = input('For a persistant queue press 1 ')
     if int(p) == 1:
-        persistance = 'persistant'
+        persistance = True
     else:
-        persistance = 'none'
+        persistance = False
     queue_to = input('\nWhere to send: ')
     main()

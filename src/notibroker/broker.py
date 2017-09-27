@@ -2,8 +2,9 @@ import asyncio
 import json
 import logging
 import aiofiles
+import os
 
-from .handlers import dispatch_message,write_queue
+from .handlers import dispatch_message,write_queue,read_queue
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,15 +18,6 @@ def send_error(writer, reason):
     writer.write(payload)
     yield from writer.drain()
 
-@asyncio.coroutine
-def read_queue():
-    #Reading persistent queue from disk
-    f = yield from aiofiles.open('filename', mode='r')
-    try:
-        contents = yield from f.read()
-    finally:
-        yield from f.close()
-
 
 @asyncio.coroutine
 def handle_message(reader, writer):
@@ -37,7 +29,7 @@ def handle_message(reader, writer):
     try:
         message = json.loads(data.decode('utf-8'))
         persistance = message.get('persistance')
-        if (persistance == 'persistant'):
+        if persistance:
             yield from write_queue(message)
     except ValueError as e:
         LOGGER.exception('Invalid message received')
@@ -57,6 +49,7 @@ def handle_message(reader, writer):
     writer.close()
 
 def run_server(hostname='localhost', port=14141, loop=None):
+    read_queue()
     if loop is None:
         loop = asyncio.get_event_loop()
     coro = asyncio.start_server(handle_message, hostname, port, loop=loop)
@@ -70,3 +63,4 @@ def run_server(hostname='localhost', port=14141, loop=None):
     server.close()
     loop.run_until_complete(server.wait_closed())
     loop.close()
+

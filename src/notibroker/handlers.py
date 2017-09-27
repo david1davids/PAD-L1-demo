@@ -2,10 +2,14 @@ import asyncio
 import collections
 import logging
 import aiofiles
+import os
+import json
 
 LOGGER = logging.getLogger(__name__)
 _QUEUES ={'default': asyncio.Queue(loop=asyncio.get_event_loop())}
 #_MESSAGE_QUEUE = asyncio.Queue(loop=asyncio.get_event_loop())
+
+SAVE_DIRECTORY = os.path.dirname(os.path.realpath(__file__)) + '/../queues/'
 
 MESSAGE_TYPES = collections.namedtuple(
     'MessageTypes', ('command', 'error', 'response')
@@ -13,9 +17,6 @@ MESSAGE_TYPES = collections.namedtuple(
 COMMANDS = collections.namedtuple(
     'Commands', ('send', 'read')
 )(*('send', 'read'))
-PERSISTANCE = collections.namedtuple(
-    'QueuePersistance', ('persistant', 'none')
-)(*('persistant', 'none'))
 
 @asyncio.coroutine
 def handle_command(command, payload,queue):
@@ -50,9 +51,28 @@ def dispatch_message(message):
 @asyncio.coroutine
 def write_queue(message):
     #Writing persistent queue to disk
+
     queue = message.get('queue')
-    f = yield from aiofiles.open(queue, mode='a')
+    save_to = os.path.join(SAVE_DIRECTORY + queue)
+    f = yield from aiofiles.open(save_to, mode='a')
     try:
-        yield from f.write(str(message)+'\n')
+        yield from f.write(json.dumps(message)+'\n')
     finally:
         yield from f.close()
+
+def read_queue():
+    #Reading persistent queue from disk
+    directory = os.listdir(SAVE_DIRECTORY)
+    if directory:
+        for file in directory:
+            _QUEUES[file] = asyncio.Queue(loop=asyncio.get_event_loop())
+            for line in open(SAVE_DIRECTORY + file, 'r'):
+                l = json.loads(line)
+                _QUEUES[file].put_nowait(l['payload'])
+
+    print(_QUEUES)
+
+    # try:
+    #     contents = yield from f.read()
+    # finally:
+    #     yield from f.close()
