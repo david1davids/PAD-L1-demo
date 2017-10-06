@@ -17,9 +17,11 @@ def get_message(loop,queue_to_read):
     }).encode('utf-8'))
     writer.write_eof()
     yield from writer.drain()
-    response = yield from reader.read()
-    writer.close()
-    return response
+    while True:
+        response = yield from reader.read(1024)
+        print(response)
+    # writer.close()
+    # return response
 
 
 @asyncio.coroutine
@@ -31,6 +33,7 @@ def run_receiver(loop):
         try:
             response = yield from get_message(loop,queue_to_read)
             message = json.loads(response.decode('utf-8'))
+            yield from get_message(loop,queue_to_read)
             if message['type'] == 'error':
                 print(message['payload'])
                 break

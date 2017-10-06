@@ -46,6 +46,7 @@ def dispatch_message(message):
     message_type = message.get('type')
     command = message.get('command')
     queue = message.get('queue')
+    persistance = message.get('persistance')
     print(message)
     if message_type != MESSAGE_TYPES.command:
         LOGGER.error('Got invalid message type %s', message_type)
@@ -53,14 +54,15 @@ def dispatch_message(message):
     if command == COMMANDS.send:
         if queue not in _QUEUES:
             _QUEUES[queue] = asyncio.Queue(loop=asyncio.get_event_loop())
+        elif _QUEUES[queue] and persistance:
+            LOGGER.exception('Invalid queue, queue type change !')
     LOGGER.debug('Dispatching command %s', command)
     response = yield from handle_command(command, message.get('payload'),queue)
     return response
 
 @asyncio.coroutine
 def write_queue(message):
-    #Writing persistent queue to disk
-
+    # Writing persistent queue to disk
     queue = message.get('queue')
     save_to = os.path.join(SAVE_DIRECTORY + queue)
     f = yield from aiofiles.open(save_to, mode='a')

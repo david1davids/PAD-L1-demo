@@ -4,9 +4,12 @@ import logging
 import aiofiles
 import os
 
-from .handlers import dispatch_message,write_queue,read_queue
+from .handlers import dispatch_message,write_queue,read_queue, _QUEUES, COMMANDS
+
+_SUBSCRIBERS = {}
 
 LOGGER = logging.getLogger(__name__)
+
 
 @asyncio.coroutine
 def send_error(writer, reason):
@@ -28,9 +31,14 @@ def handle_message(reader, writer):
 
     try:
         message = json.loads(data.decode('utf-8'))
+        queue = message.get('queue')
         persistance = message.get('persistance')
         if persistance:
             yield from write_queue(message)
+        if message.get('command') == COMMANDS.read:
+            subs = message.get('queue')
+            _SUBSCRIBERS[subs] = asyncio.Queue(loop=asyncio.get_event_loop())
+            _SUBSCRIBERS[subs].put(writer)
     except ValueError as e:
         LOGGER.exception('Invalid message received')
         send_error(writer, str(e))
@@ -38,15 +46,22 @@ def handle_message(reader, writer):
 
     try:
         response = yield from dispatch_message(message)
-        payload = json.dumps(response).encode('utf-8')
-        writer.write(payload)
-        yield from writer.drain()
-        writer.write_eof()
+        print(_SUBSCRIBERS[queue])
+        if message.get('command') == COMMANDS.read:
+            for subscriber in _SUBSCRIBERS[queue]:
+                while True:
+                    payload = json.dumps(response).encode('utf-8')
+                    subscriber.write(payload)
+        # payload = json.dumps(response).encode('utf-8')
+        # writer.write(payload)
+        # yield from writer.drain()
+        # writer.write_eof()
     except ValueError as e:
         LOGGER.exception('Cannot process the message. %s')
         send_error(writer, str(e))
 
     writer.close()
+
 
 def run_server(hostname='localhost', port=14141, loop=None):
     read_queue()
