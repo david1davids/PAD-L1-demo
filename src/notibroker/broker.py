@@ -4,7 +4,7 @@ import logging
 import aiofiles
 import os
 
-from .handlers import dispatch_message,write_queue,read_queue
+from .handlers import dispatch_message,write_queue,read_queue, _PERSISTANCE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +29,9 @@ def handle_message(reader, writer):
     try:
         message = json.loads(data.decode('utf-8'))
         persistance = message.get('persistance')
+        queue = message.get('queue')
+        if queue not in _PERSISTANCE:
+            _PERSISTANCE[queue] = persistance
         if persistance:
             yield from write_queue(message)
     except ValueError as e:

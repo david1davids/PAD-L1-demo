@@ -8,7 +8,7 @@ import json
 LOGGER = logging.getLogger(__name__)
 _QUEUES ={'default': asyncio.Queue(loop=asyncio.get_event_loop())}
 #_MESSAGE_QUEUE = asyncio.Queue(loop=asyncio.get_event_loop())
-
+_PERSISTANCE = {'default': False}
 SAVE_DIRECTORY = os.path.dirname(os.path.realpath(__file__)) + '/../queues/'
 
 MESSAGE_TYPES = collections.namedtuple(
@@ -25,13 +25,16 @@ def handle_command(command, payload, queue, persistance):
         LOGGER.error('Got invalid command %s', command)
         raise ValueError('Invalid command. Should be one of %s' % (COMMANDS,))
     if command == COMMANDS.send:
-        if queue in _QUEUES and _QUEUES[queue].get('persistance') == persistance:
+        if queue in _QUEUES and _PERSISTANCE[queue] == persistance:
             if queue == "":
                 yield from _QUEUES['default'].put(payload)
             else:
                 yield from _QUEUES[queue].put(payload)
+                yield from _QUEUES[queue].put(persistance)
             msg = 'OK'
         else:
+            LOGGER.error('Got invalid queue %s', queue)
+            raise ValueError('Trying to change the persistance of the queue')
             msg = 'Do not change type of the queue !'
             return {
                 'type': MESSAGE_TYPES.error,
