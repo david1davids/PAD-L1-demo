@@ -17,8 +17,8 @@ Example of the structure for a `notibroker` message:
 {
     "type": "command",
     "command": "<send|read>",
-    "payload": "<payload>"
-    "persistance": True|False
+    "payload": "<payload>",
+    "persistance": "True|False"
 }
 ```
 ```json
