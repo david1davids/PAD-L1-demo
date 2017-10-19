@@ -19,20 +19,28 @@ COMMANDS = collections.namedtuple(
 )(*('send', 'read'))
 
 @asyncio.coroutine
-def handle_command(command, payload,queue):
+def handle_command(command, payload, queue, persistance):
     LOGGER.debug('Handling command %s, payload %s', command, payload)
     if command not in COMMANDS:
         LOGGER.error('Got invalid command %s', command)
         raise ValueError('Invalid command. Should be one of %s' % (COMMANDS,))
     if command == COMMANDS.send:
-        if queue == "":
-            yield from _QUEUES["default"].put_nowait(payload)
+        if queue in _QUEUES and _QUEUES[queue].get('persistance') == persistance:
+            if queue == "":
+                yield from _QUEUES['default'].put(payload)
+            else:
+                yield from _QUEUES[queue].put(payload)
+            msg = 'OK'
         else:
-            yield from _QUEUES[queue].put(payload)
-        msg = 'OK'
+            msg = 'Do not change type of the queue !'
+            return {
+                'type': MESSAGE_TYPES.error,
+                'payload': msg
+            }
     elif command == COMMANDS.read:
         if queue in _QUEUES:
             msg = yield from _QUEUES[queue].get()
+            yield from delete_mesaage(queue)
         else:
             msg = 'No such queue !'
             return {
@@ -49,6 +57,7 @@ def dispatch_message(message):
     message_type = message.get('type')
     command = message.get('command')
     queue = message.get('queue')
+    persistance = message.get('persistance')
     # print(message)
     if message_type != MESSAGE_TYPES.command:
         LOGGER.error('Got invalid message type %s', message_type)
@@ -56,9 +65,8 @@ def dispatch_message(message):
     if command == COMMANDS.send:
         if queue not in _QUEUES:
             _QUEUES[queue] = asyncio.Queue(loop=asyncio.get_event_loop())
-
     LOGGER.debug('Dispatching command %s', command)
-    response = yield from handle_command(command, message.get('payload'),queue)
+    response = yield from handle_command(command, message.get('payload'),queue,persistance)
     return response
 
 

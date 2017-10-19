@@ -46,8 +46,9 @@ def main():
 
 if __name__ == '__main__':
     p = input('For a persistant queue press 1 ')
-    if int(p) == 1:
-        persistance = True
+    if p:
+        if int(p) == 1:
+            persistance = True
     else:
         persistance = False
     queue_to = input('\nWhere to send: ')
