@@ -42,3 +42,5 @@ Example of the structure for a `notibroker` message:
 contains some info about the error.
 
 `command` is type of action to be executed by the `notibroker` for the `command` message.
+
+At the sender side there is an aditional parameter `persistance` witch specify if the queue is ment to be persistant or not.
