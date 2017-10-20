@@ -33,6 +33,10 @@ def run_sender(loop):
             message = 'Just sending a random UUID %s' % (uuid.uuid4().hex,)
             print('Sending %s' % (message,))
             response = yield from send_message(message, loop)
+            message = json.loads(response.decode('utf-8'))
+            if message['type'] == 'error':
+                print(message['payload'])
+                break
             print('Received %s', response)
             yield from asyncio.sleep(1)
         except KeyboardInterrupt:

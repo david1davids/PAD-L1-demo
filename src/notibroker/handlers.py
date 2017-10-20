@@ -43,7 +43,14 @@ def handle_command(command, payload, queue, persistance):
     elif command == COMMANDS.read:
         if queue in _QUEUES:
             msg = yield from _QUEUES[queue].get()
-            yield from delete_mesaage(queue)
+            if persistance:
+                yield from delete_mesaage(queue)
+            if _QUEUES[queue].get() == None:
+                try:
+                    del _QUEUES[queue]
+                except KeyError:
+                    pass
+
         else:
             msg = 'No such queue !'
             return {
